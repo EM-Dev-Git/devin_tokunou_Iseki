@@ -689,7 +689,7 @@
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value>=Format(Fields!KOSU.Value,"#,##0")</Value>
+                                  <Value>=Format(Fields!KOSU.Value,"#,##0") &amp; " | " &amp; Fields!TANI.Value</Value>
                                   <Style>
                                     <FontFamily>ＭＳ ゴシック</FontFamily>
                                     <FontSize>9pt</FontSize>

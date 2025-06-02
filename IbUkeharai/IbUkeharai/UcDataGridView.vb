@@ -116,6 +116,16 @@ Namespace IbUkeharai
 
 		Private Sub UcDataGridView_Load(sender As Object, e As EventArgs)
 			Me.CustDgv.AllowUserToDeleteRows = True
+			
+			' 単位列の最大入力文字数を設定
+			For Each col As DataGridViewColumn In Me.CustDgv.Columns
+				If col.Name = "TANI" Then
+					Dim textBoxCell As DataGridViewTextBoxColumn = TryCast(col, DataGridViewTextBoxColumn)
+					If textBoxCell IsNot Nothing Then
+						textBoxCell.MaxInputLength = 10
+					End If
+				End If
+			Next
 		End Sub
 
 		Private Sub CustDgv_CellClick(sender As Object, e As DataGridViewCellEventArgs) Handles CustDgv.CellClick

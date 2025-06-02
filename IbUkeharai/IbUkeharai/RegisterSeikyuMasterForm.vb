@@ -517,6 +517,34 @@ Namespace IbUkeharai
 				Me.CclDateTimePicker1.Focus()
 				Return result
 			End If
+			
+			' グリッドの必須項目チェック
+			For Each row As DataGridViewRow In Me.UcDgv.CustDgv.Rows
+				' 削除されていない行のみチェック
+				If row.Index < Me.UcDgv.CustDgv.NewRowIndex AndAlso Not row.IsNewRow Then
+					' 数量チェック
+					If IsDBNull(row.Cells("SURYO").Value) OrElse String.IsNullOrEmpty(Conversions.ToString(row.Cells("SURYO").Value)) Then
+						Me.lblMessage.Text = "数量を入力してください。"
+						Me.UcDgv.CustDgv.CurrentCell = row.Cells("SURYO")
+						Return False
+					End If
+					
+					' 単位チェック
+					If IsDBNull(row.Cells("TANI").Value) OrElse String.IsNullOrEmpty(Conversions.ToString(row.Cells("TANI").Value)) Then
+						Me.lblMessage.Text = "単位を入力してください。"
+						Me.UcDgv.CustDgv.CurrentCell = row.Cells("TANI")
+						Return False
+					End If
+					
+					' 単価チェック
+					If IsDBNull(row.Cells("TANKA").Value) OrElse String.IsNullOrEmpty(Conversions.ToString(row.Cells("TANKA").Value)) Then
+						Me.lblMessage.Text = "単価を入力してください。"
+						Me.UcDgv.CustDgv.CurrentCell = row.Cells("TANKA")
+						Return False
+					End If
+				End If
+			Next
+			
 			result = True
 			Me.AddRow_Button.Enabled = True
 			Return result
@@ -1573,7 +1601,20 @@ IL_13C0:
 			ucDgv.CustDgv = custDgv
 			Me._gridViewInfo = gridViewInfo
 			Me._gridViewInfo.listOfHidden.Add("SAKU_KBN")
+			
+			' 金額列を読み取り専用に設定
+			Me._gridViewInfo.dataInfo.ItemDetail("KINGAKU").ReadOnly = True
+			
 			Me._gridViewInfo.DisplayGridView(sql, 0)
+			
+			' 金額列を読み取り専用に設定（表示色も変更）
+			For Each col As DataGridViewColumn In Me.UcDgv.CustDgv.Columns
+				If col.Name = "KINGAKU" Then
+					col.ReadOnly = True
+					col.DefaultCellStyle.BackColor = Me._bkcolor_readonly
+				End If
+			Next
+			
 			Me.InitDisplay()
 			Me.CclDateTimePicker1.Value = DateAndTime.Now
 		End Sub
@@ -1585,6 +1626,61 @@ IL_13C0:
 			If Operators.ConditionalCompareObjectEqual(customDataGridView.CellValuePre, dataGridViewRow.Cells(e.ColumnIndex).Value, False) Then
 				Return
 			End If
+			
+			' 数量または単価が変更された場合、金額を自動計算
+			If "SURYO".Equals(dataGridViewColumn.Name) OrElse "TANKA".Equals(dataGridViewColumn.Name) Then
+				' 数量と単価の値を取得
+				Dim suryo As Decimal = 0
+				Dim tanka As Decimal = 0
+				
+				' 数量の取得と検証
+				If Not IsDBNull(dataGridViewRow.Cells("SURYO").Value) AndAlso Not String.IsNullOrEmpty(Conversions.ToString(dataGridViewRow.Cells("SURYO").Value)) Then
+					If Not Decimal.TryParse(Conversions.ToString(dataGridViewRow.Cells("SURYO").Value), suryo) Then
+						dataGridViewRow.Cells("SURYO").ErrorText = "数値を入力してください"
+						Return
+					Else
+						dataGridViewRow.Cells("SURYO").ErrorText = Nothing
+					End If
+				Else
+					' 数量が未入力の場合は背景色を変更
+					dataGridViewRow.Cells("SURYO").Style.BackColor = Color.FromArgb(255, 221, 221) ' 薄い赤色
+				End If
+				
+				' 単価の取得と検証
+				If Not IsDBNull(dataGridViewRow.Cells("TANKA").Value) AndAlso Not String.IsNullOrEmpty(Conversions.ToString(dataGridViewRow.Cells("TANKA").Value)) Then
+					If Not Decimal.TryParse(Conversions.ToString(dataGridViewRow.Cells("TANKA").Value), tanka) Then
+						dataGridViewRow.Cells("TANKA").ErrorText = "数値を入力してください"
+						Return
+					Else
+						dataGridViewRow.Cells("TANKA").ErrorText = Nothing
+					End If
+				Else
+					' 単価が未入力の場合は背景色を変更
+					dataGridViewRow.Cells("TANKA").Style.BackColor = Color.FromArgb(255, 221, 221) ' 薄い赤色
+				End If
+				
+				' 両方の値が有効な場合は金額を計算
+				If suryo > 0 AndAlso tanka > 0 Then
+					Dim kingaku As Decimal = suryo * tanka
+					dataGridViewRow.Cells("KINGAKU").Value = kingaku
+					
+					' 背景色を元に戻す
+					dataGridViewRow.Cells("SURYO").Style.BackColor = Me._bkcolor_normal
+					dataGridViewRow.Cells("TANKA").Style.BackColor = Me._bkcolor_normal
+				End If
+			End If
+			
+			' 単位の入力チェック
+			If "TANI".Equals(dataGridViewColumn.Name) Then
+				dataGridViewRow.Cells("TANI").ErrorText = Nothing
+				If IsDBNull(dataGridViewRow.Cells("TANI").Value) OrElse String.IsNullOrEmpty(Conversions.ToString(dataGridViewRow.Cells("TANI").Value)) Then
+					' 単位が未入力の場合は背景色を変更
+					dataGridViewRow.Cells("TANI").Style.BackColor = Color.FromArgb(255, 221, 221) ' 薄い赤色
+				Else
+					dataGridViewRow.Cells("TANI").Style.BackColor = Me._bkcolor_normal
+				End If
+			End If
+			
 			If "SAKI_CD".Equals(dataGridViewColumn.Name) Then
 				dataGridViewRow.Cells("SAKI_CD").ErrorText = Nothing
 				If IsNothing(RuntimeHelpers.GetObjectValue(dataGridViewRow.Cells(e.ColumnIndex).Value)) Then

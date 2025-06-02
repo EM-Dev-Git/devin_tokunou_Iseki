@@ -32,6 +32,9 @@
 
 **ファイル**: `/home/ubuntu/repos/devin_tokunou_Iseki/DB/add_tani_column.sql`（新規作成）
 
+**修正前**: ファイルが存在しない
+
+**修正後**:
 ```sql
 -- バックアップテーブル作成
 SELECT * INTO M_SEIKYU_BACKUP FROM M_SEIKYU;
@@ -52,15 +55,42 @@ ALTER TABLE M_SEIKYU ALTER COLUMN TANI DROP DEFAULT;
 
 #### 2.1 セル編集完了時の自動計算処理追加
 
-**行番号**: 1581-1632
+**行番号**: 約1581-1632付近
 
+**修正前**:
+```vb
+Private Sub UcDgv_CellEndEdit(sender As Object, e As DataGridViewCellEventArgs) Handles UcDgv.DgvCellEndEdit
+    Dim customDataGridView As CustomDataGridView = CType(sender, CustomDataGridView)
+    Dim dataGridViewColumn As DataGridViewColumn = customDataGridView.Columns(e.ColumnIndex)
+    
+    ' 値が変更されていない場合は何もしない
+    If Operators.ConditionalCompareObjectEqual(customDataGridView.CellValuePre, customDataGridView.Rows(e.RowIndex).Cells(e.ColumnIndex).Value, False) Then
+        Return
+    End If
+    
+    ' 既存の処理（SAKI_CD、KAZEI_KBN、MEISAI_UMUなどの処理）
+    If "SAKI_CD".Equals(dataGridViewColumn.Name) Then
+        ' 既存のコード
+    End If
+    
+    If "KAZEI_KBN".Equals(dataGridViewColumn.Name) Then
+        ' 既存のコード
+    End If
+    
+    If "MEISAI_UMU".Equals(dataGridViewColumn.Name) Then
+        ' 既存のコード
+    End If
+End Sub
+```
+
+**修正後**:
 ```vb
 Private Sub UcDgv_CellEndEdit(sender As Object, e As DataGridViewCellEventArgs) Handles UcDgv.DgvCellEndEdit
     Dim customDataGridView As CustomDataGridView = CType(sender, CustomDataGridView)
     Dim dataGridViewColumn As DataGridViewColumn = customDataGridView.Columns(e.ColumnIndex)
     Dim dataGridViewRow As DataGridViewRow = customDataGridView.Rows(e.RowIndex)
     
-    ' 既存のコード（変更なし）
+    ' 値が変更されていない場合は何もしない
     If Operators.ConditionalCompareObjectEqual(customDataGridView.CellValuePre, dataGridViewRow.Cells(e.ColumnIndex).Value, False) Then
         Return
     End If
@@ -119,12 +149,11 @@ Private Sub UcDgv_CellEndEdit(sender As Object, e As DataGridViewCellEventArgs) 
         End If
     End If
     
-    ' 既存のコード（以下変更なし）
+    ' 既存の処理（変更なし）
     If "SAKI_CD".Equals(dataGridViewColumn.Name) Then
         ' 既存のコード
     End If
     
-    ' 既存のコード（以下変更なし）
     If "KAZEI_KBN".Equals(dataGridViewColumn.Name) Then
         ' 既存のコード
     End If
@@ -137,8 +166,19 @@ End Sub
 
 #### 2.2 グリッドビュー初期化時の設定追加
 
-**行番号**: 1572-1578
+**行番号**: 約1572-1578付近
 
+**修正前**:
+```vb
+Dim gridViewInfo As New ControlDataGridView(custDgv, Me._conf)
+ucDgv.CustDgv = custDgv
+Me._gridViewInfo = gridViewInfo
+Me._gridViewInfo.listOfHidden.Add("SAKU_KBN")
+
+Me._gridViewInfo.DisplayGridView(sql, 0)
+```
+
+**修正後**:
 ```vb
 Dim gridViewInfo As New ControlDataGridView(custDgv, Me._conf)
 ucDgv.CustDgv = custDgv
@@ -153,8 +193,27 @@ Me._gridViewInfo.DisplayGridView(sql, 0)
 
 #### 2.3 入力チェック機能の強化
 
-**行番号**: 507-514（chkInput メソッド内）
+**行番号**: 約507-514付近（chkInput メソッド内）
 
+**修正前**:
+```vb
+Private Function chkInput(ByVal a_execFlag As Boolean) As Boolean
+    ' 既存のコード
+    
+    ' 取引先コードのチェック
+    If String.IsNullOrEmpty(Me.ComboTori1.Text.Trim()) Then
+        Me.lblMessage.Text = "取引先コードを入力してください。"
+        Me.ComboTori1.Focus()
+        Return False
+    End If
+    
+    ' 既存のコード
+    
+    Return True
+End Function
+```
+
+**修正後**:
 ```vb
 Private Function chkInput(ByVal a_execFlag As Boolean) As Boolean
     ' 既存のコード
@@ -203,6 +262,12 @@ End Function
 
 **行番号**: 約1570-1580付近（RegisterSeikyuMasterForm_Load メソッド内）
 
+**修正前**:
+```vb
+' 既存のコード（列プロパティの設定なし）
+```
+
+**修正後**:
 ```vb
 ' 金額列を読み取り専用に設定
 For Each col As DataGridViewColumn In Me.UcDgv.CustDgv.Columns
@@ -219,14 +284,15 @@ Next
 
 #### 3.1 SQL クエリに単位カラムを追加
 
-**行番号**: 126-127
+**行番号**: 約126-127付近
 
+**修正前**:
 ```vb
 Dim text2 As String = "SELECT H.TORI_CD, H.SEIKYU_YYYYMM, H.SEIKYU_TYPE, H.SEIKYU_NO, H.KAZEI, H.HIKAZEI, H.SYOHIZEI, H.GOUKEI, M.SEIKYU_SQNO, M.SAKU_KBN, M.UCHIWAKE, M.SURYO, M.TANI, "
 text2 += " M.TANKA, M.KINGAKU, M.MEISAI_UMU, M.SAKI_CD, M.TEKIYO, T.TORI_NAME"
 ```
 
-この部分は既に `M.TANI` が含まれているため、修正は不要です。
+**修正後**: 既に `M.TANI` が含まれているため、修正は不要です。
 
 ### 4. データグリッドビュー関連の修正
 
@@ -236,6 +302,12 @@ text2 += " M.TANKA, M.KINGAKU, M.MEISAI_UMU, M.SAKI_CD, M.TEKIYO, T.TORI_NAME"
 
 **行番号**: 約100-150付近（InitializeComponent メソッド内）
 
+**修正前**:
+```vb
+' 既存のコード（単位列の設定なし）
+```
+
+**修正後**:
 ```vb
 ' 単位列の最大入力文字数を設定
 For Each col As DataGridViewColumn In Me.CustDgv.Columns
